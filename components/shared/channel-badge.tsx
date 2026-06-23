@@ -1,0 +1,23 @@
+import { cn } from '@/lib/utils'
+import type { ChannelName } from '@/types'
+import { CHANNEL_ICONS } from '@/constants'
+
+interface ChannelBadgeProps {
+  name: string
+  className?: string
+  showIcon?: boolean
+}
+
+export function ChannelBadge({ name, className, showIcon = true }: ChannelBadgeProps) {
+  const icon = CHANNEL_ICONS[name as ChannelName] ?? '🏪'
+
+  return (
+    <span className={cn(
+      'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground',
+      className
+    )}>
+      {showIcon && <span>{icon}</span>}
+      <span>{name}</span>
+    </span>
+  )
+}

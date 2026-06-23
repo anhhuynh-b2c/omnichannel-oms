@@ -1,65 +1,74 @@
-import Image from "next/image";
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
+import { StatCard } from '@/components/shared/stat-card'
+import { RevenueByChannelChart } from '@/components/dashboard/revenue-by-channel-chart'
+import { SalesTrendChart } from '@/components/dashboard/sales-trend-chart'
+import { TopProductsTable } from '@/components/dashboard/top-products-table'
+import { LowStockTable } from '@/components/dashboard/low-stock-table'
+import {
+  MOCK_KPI,
+  MOCK_REVENUE_BY_CHANNEL,
+  MOCK_SALES_TREND_7,
+  MOCK_SALES_TREND_30,
+  MOCK_TOP_PRODUCTS,
+  MOCK_LOW_STOCK,
+} from '@/lib/mock-data'
+import { formatCurrency, formatNumber } from '@/lib/utils/format'
+import { DollarSign, ShoppingCart, AlertTriangle, Clock } from 'lucide-react'
 
-export default function Home() {
+export default function DashboardPage() {
+  const kpi = MOCK_KPI
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <DashboardLayout titleKey="nav.dashboard">
+      <div className="space-y-6">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Revenue"
+            value={formatCurrency(kpi.total_revenue)}
+            change={kpi.revenue_change}
+            changeLabel="vs last 30 days"
+            icon={DollarSign}
+            iconColor="text-blue-600"
+            iconBg="bg-blue-50 dark:bg-blue-950"
+          />
+          <StatCard
+            title="New Orders"
+            value={formatNumber(kpi.new_orders)}
+            change={kpi.orders_change}
+            changeLabel="vs last 30 days"
+            icon={ShoppingCart}
+            iconColor="text-emerald-600"
+            iconBg="bg-emerald-50 dark:bg-emerald-950"
+          />
+          <StatCard
+            title="Low Stock Products"
+            value={formatNumber(kpi.low_stock_count)}
+            icon={AlertTriangle}
+            iconColor="text-orange-600"
+            iconBg="bg-orange-50 dark:bg-orange-950"
+          />
+          <StatCard
+            title="Pending Orders"
+            value={formatNumber(kpi.pending_orders)}
+            icon={Clock}
+            iconColor="text-purple-600"
+            iconBg="bg-purple-50 dark:bg-purple-950"
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <RevenueByChannelChart data={MOCK_REVENUE_BY_CHANNEL} />
+          <SalesTrendChart data7={MOCK_SALES_TREND_7} data30={MOCK_SALES_TREND_30} />
         </div>
-      </main>
-    </div>
-  );
+
+        {/* Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <TopProductsTable data={MOCK_TOP_PRODUCTS} />
+          <LowStockTable data={MOCK_LOW_STOCK} />
+        </div>
+      </div>
+    </DashboardLayout>
+  )
 }
