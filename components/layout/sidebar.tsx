@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
   Package,
@@ -14,12 +14,14 @@ import {
   ChevronRight,
   Store,
   ShoppingBag,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useI18n } from '@/lib/i18n/context'
+import { createClient } from '@/lib/supabase/client'
 
 const NAV_ITEMS = [
   { href: '/',                label: 'nav.dashboard',      icon: LayoutDashboard },
@@ -34,8 +36,15 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
   const { t } = useI18n()
+
+  async function handleLogout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -103,11 +112,29 @@ export function Sidebar() {
         </ScrollArea>
 
         {/* Footer */}
-        {!collapsed && (
-          <div className="px-4 py-3 border-t border-slate-700 shrink-0">
-            <p className="text-xs text-slate-500">v1.0.0 — OmniOMS</p>
-          </div>
-        )}
+        <div className="px-2 py-3 border-t border-slate-700 shrink-0">
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center px-2 py-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Đăng xuất</TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors text-sm"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              <span>Đăng xuất</span>
+            </button>
+          )}
+        </div>
 
         {/* Collapse toggle */}
         <button
