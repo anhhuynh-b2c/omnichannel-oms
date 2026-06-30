@@ -124,6 +124,9 @@ export default function SalePage() {
           <CheckoutPanel
             cart={cart}
             discount={discount}
+            note={note}
+            channel={channel}
+            customer={customer}
             onCheckoutComplete={handleCheckoutComplete}
           />
         </div>

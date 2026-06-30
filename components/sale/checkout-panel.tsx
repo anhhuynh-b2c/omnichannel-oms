@@ -19,6 +19,9 @@ interface CartItem {
 interface CheckoutPanelProps {
   cart: CartItem[]
   discount: number
+  note: string
+  channel: string
+  customer: { phone: string; name: string; address: string }
   onCheckoutComplete: () => void
 }
 
@@ -29,7 +32,7 @@ const CARRIERS = [
   { value: 'SELF', label: 'Tự giao' },
 ]
 
-export function CheckoutPanel({ cart, discount, onCheckoutComplete }: CheckoutPanelProps) {
+export function CheckoutPanel({ cart, discount, note, channel, customer, onCheckoutComplete }: CheckoutPanelProps) {
   const [carrier, setCarrier] = useState('GHN')
   const [weight, setWeight] = useState(500)
   const [shippingFee, setShippingFee] = useState(30000)
@@ -46,21 +49,38 @@ export function CheckoutPanel({ cart, discount, onCheckoutComplete }: CheckoutPa
       return
     }
     setLoading(true)
-    await new Promise(r => setTimeout(r, 600))
-    setLoading(false)
-    toast.success('Thanh toán thành công! Đơn hàng đã được tạo.')
-    onCheckoutComplete()
+
+    try {
+      const res = await fetch('/api/sale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel, customer, items: cart, discount, shippingFee, notes: note }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error ?? 'Thanh toán thất bại')
+        return
+      }
+
+      toast.success(`Tạo đơn ${data.orderNumber} thành công!`)
+      onCheckoutComplete()
+    } catch {
+      toast.error('Lỗi kết nối — vui lòng thử lại')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="flex flex-col h-full bg-white border-l border-gray-200">
-      {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 shrink-0">
         <h2 className="text-sm font-semibold text-gray-700">Thanh toán</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Shipping section */}
+        {/* Shipping */}
         <div className="space-y-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Vận chuyển</p>
 
@@ -80,25 +100,16 @@ export function CheckoutPanel({ cart, discount, onCheckoutComplete }: CheckoutPa
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Khối lượng (g)</label>
-              <Input
-                type="number"
-                className="h-8 text-sm"
-                value={weight}
-                onChange={e => setWeight(parseInt(e.target.value) || 0)}
-              />
+              <Input type="number" className="h-8 text-sm" value={weight}
+                onChange={e => setWeight(parseInt(e.target.value) || 0)} />
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Phí vận chuyển</label>
-              <Input
-                type="number"
-                className="h-8 text-sm"
-                value={shippingFee}
-                onChange={e => setShippingFee(parseInt(e.target.value) || 0)}
-              />
+              <Input type="number" className="h-8 text-sm" value={shippingFee}
+                onChange={e => setShippingFee(parseInt(e.target.value) || 0)} />
             </div>
           </div>
 
-          {/* COD toggle */}
           <div className="flex items-center justify-between">
             <label className="text-sm text-gray-700 cursor-pointer select-none" htmlFor="cod-toggle">
               Thu hộ COD
@@ -108,43 +119,30 @@ export function CheckoutPanel({ cart, discount, onCheckoutComplete }: CheckoutPa
               onClick={() => setIsCod(v => !v)}
               className={`relative w-10 h-5 rounded-full transition-colors ${isCod ? 'bg-blue-500' : 'bg-gray-300'}`}
             >
-              <span
-                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                  isCod ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isCod ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
           </div>
 
           {isCod && (
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Số tiền COD</label>
-              <Input
-                type="number"
-                className="h-8 text-sm"
-                value={codAmount}
-                onChange={e => setCodAmount(parseInt(e.target.value) || 0)}
-                placeholder="0"
-              />
+              <Input type="number" className="h-8 text-sm" value={codAmount}
+                onChange={e => setCodAmount(parseInt(e.target.value) || 0)} placeholder="0" />
             </div>
           )}
         </div>
 
-        {/* Payment summary */}
+        {/* Summary */}
         <div className="space-y-2 border-t border-gray-100 pt-4">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tổng kết</p>
-
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Tạm tính</span>
-            <span>{formatCurrency(subtotal)}</span>
+            <span>Tạm tính</span><span>{formatCurrency(subtotal)}</span>
           </div>
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Giảm giá</span>
-            <span className="text-red-500">-{formatCurrency(discount)}</span>
+            <span>Giảm giá</span><span className="text-red-500">-{formatCurrency(discount)}</span>
           </div>
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Phí vận chuyển</span>
-            <span>{formatCurrency(shippingFee)}</span>
+            <span>Phí vận chuyển</span><span>{formatCurrency(shippingFee)}</span>
           </div>
           <div className="flex justify-between items-center pt-2 border-t border-gray-200">
             <span className="text-sm font-semibold text-gray-800">Tổng thanh toán</span>
@@ -152,7 +150,6 @@ export function CheckoutPanel({ cart, discount, onCheckoutComplete }: CheckoutPa
           </div>
         </div>
 
-        {/* Cart summary */}
         {cart.length > 0 && (
           <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
             <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
@@ -165,14 +162,11 @@ export function CheckoutPanel({ cart, discount, onCheckoutComplete }: CheckoutPa
                 <span className="shrink-0">{formatCurrency(item.price * item.qty)}</span>
               </div>
             ))}
-            {cart.length > 3 && (
-              <p className="text-xs text-gray-400">+{cart.length - 3} sản phẩm khác</p>
-            )}
+            {cart.length > 3 && <p className="text-xs text-gray-400">+{cart.length - 3} sản phẩm khác</p>}
           </div>
         )}
       </div>
 
-      {/* Checkout button */}
       <div className="p-4 border-t border-gray-200 shrink-0">
         <Button
           onClick={handleCheckout}
