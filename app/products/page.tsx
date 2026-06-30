@@ -1,10 +1,18 @@
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { ProductsTable } from '@/components/products/products-table'
-import { MOCK_PRODUCTS_WITH_INVENTORY } from '@/lib/mock-data'
+import { getProducts } from '@/lib/data/products'
 
-export default function ProductsPage() {
-  // Using mock data — swap with: await getProducts() once Supabase is configured
-  const { data, total } = MOCK_PRODUCTS_WITH_INVENTORY
+export default async function ProductsPage() {
+  let data: any[] = []
+  let total = 0
+
+  try {
+    const result = await getProducts({ limit: 50 })
+    data = result.data
+    total = result.total
+  } catch {
+    // Supabase not configured — show empty state
+  }
 
   return (
     <DashboardLayout titleKey="nav.products">
