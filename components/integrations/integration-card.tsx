@@ -314,7 +314,7 @@ export function IntegrationCard({ id, name, icon, status: initialStatus }: Integ
                       </FormLabel>
                       <FormControl>
                         {fieldDef.type === 'select' ? (
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value as string | undefined}>
                             <SelectTrigger>
                               <SelectValue placeholder={`Chọn ${fieldDef.label}`} />
                             </SelectTrigger>
@@ -329,6 +329,7 @@ export function IntegrationCard({ id, name, icon, status: initialStatus }: Integ
                             type={fieldDef.type === 'password' ? 'password' : 'text'}
                             placeholder={fieldDef.placeholder}
                             {...field}
+                            value={field.value as string ?? ''}
                           />
                         )}
                       </FormControl>

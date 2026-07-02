@@ -70,7 +70,8 @@ export function POForm({
   const shipToAddress = [companySettings?.address, companySettings?.city].filter(Boolean).join(', ')
 
   const form = useForm<POFormValues>({
-    resolver: zodResolver(schema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       supplier_id:     defaultValues?.supplier_id     ?? '',
       expected_date:   defaultValues?.expected_date   ?? new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],

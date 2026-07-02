@@ -41,6 +41,7 @@ export type ChannelName =
   | 'Instagram'
   | 'Website'
   | 'Zalo'
+  | 'Direct'
 
 // Channels that push status via webhook — staff cannot manually change status
 export const MARKETPLACE_CHANNELS: ChannelName[] = ['Shopee', 'TikTok Shop', 'Lazada']
@@ -154,7 +155,7 @@ export interface Order {
   order_number: string
   external_order_id?: string | null
   total_amount: number
-  vat_rate: number
+  vat_rate?: number
   discount_amount?: number
   shipping_fee?: number
   payment_method?: string

@@ -18,6 +18,7 @@ import { LocaleSwitcher } from './locale-switcher'
 import { NotificationPanel } from './notification-panel'
 import { useI18n } from '@/lib/i18n/context'
 import { getAccountProfile } from '@/lib/actions/account.actions'
+import { createClient } from '@/lib/supabase/client'
 
 interface TopbarProps {
   titleKey?: string

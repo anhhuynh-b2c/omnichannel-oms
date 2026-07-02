@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { StatCard } from '@/components/shared/stat-card'
 import { ChannelComparisonChart } from '@/components/reports/channel-comparison-chart'
 import { RevenueTrendChart } from '@/components/reports/revenue-trend-chart'
@@ -76,8 +75,7 @@ export function ReportsContent() {
     : 0
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -185,7 +183,6 @@ export function ReportsContent() {
             }} />
           )}
         </div>
-      </div>
-    </DashboardLayout>
+    </div>
   )
 }

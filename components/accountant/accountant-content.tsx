@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { TimeRangePicker, type TimeRange, getDateRange } from '@/components/reports/time-range-picker'
 import { PLReport } from '@/components/accountant/pl-report'
 import { SupplierDebt } from '@/components/accountant/supplier-debt'
@@ -145,7 +144,7 @@ export function AccountantContent() {
   }
 
   return (
-    <DashboardLayout>
+    <>
       {/* Print styles */}
       <style>{`
         @media print {
@@ -215,6 +214,6 @@ export function AccountantContent() {
           )}
         </div>
       </div>
-    </DashboardLayout>
+    </>
   )
 }
