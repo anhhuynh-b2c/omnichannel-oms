@@ -18,24 +18,18 @@ import {
 } from '@/components/ui/select'
 import { DataTable } from '@/components/shared/data-table'
 import { ProductForm, type ProductFormValues } from './product-form'
+import { ProductBomSection } from './product-bom-section'
 import { createProduct, updateProduct, deleteProduct } from '@/lib/actions/product.actions'
 import { formatCurrency, formatNumber } from '@/lib/utils/format'
 import { PRODUCT_CATEGORIES } from '@/constants'
-import type { Product } from '@/types'
+import type { ProductWithInventory } from '@/types'
+import type { PackagingMaterial } from '@/lib/actions/fulfillment.actions'
 import { cn } from '@/lib/utils'
-
-interface ProductWithInventory extends Product {
-  inventory?: {
-    stock_quantity: number
-    reorder_point: number
-    safety_stock: number
-    inventory_status: string
-  } | null
-}
 
 interface ProductsTableProps {
   initialData: ProductWithInventory[]
   total: number
+  materials?: PackagingMaterial[]
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -44,13 +38,14 @@ const STATUS_COLORS: Record<string, string> = {
   ARCHIVED: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
 }
 
-export function ProductsTable({ initialData, total }: ProductsTableProps) {
+export function ProductsTable({ initialData, total, materials = [] }: ProductsTableProps) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [categoryFilter, setCategoryFilter] = useState('ALL')
   const [data, setData] = useState(initialData)
   const [createOpen, setCreateOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<ProductWithInventory | null>(null)
+  const [editTab, setEditTab] = useState<'info' | 'bom'>('info')
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -253,7 +248,7 @@ export function ProductsTable({ initialData, total }: ProductsTableProps) {
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-xl flex flex-col max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Create New Product</DialogTitle>
           </DialogHeader>
@@ -262,18 +257,41 @@ export function ProductsTable({ initialData, total }: ProductsTableProps) {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editProduct} onOpenChange={v => !v && setEditProduct(null)}>
-        <DialogContent className="max-w-xl">
+      <Dialog open={!!editProduct} onOpenChange={v => { if (!v) { setEditProduct(null); setEditTab('info') } }}>
+        <DialogContent className="max-w-xl flex flex-col max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
           </DialogHeader>
           {editProduct && (
-            <ProductForm
-              defaultValues={editProduct}
-              onSubmit={handleEdit}
-              onCancel={() => setEditProduct(null)}
-              loading={isPending}
-            />
+            <>
+              <div className="flex gap-1 border-b border-border -mt-1 shrink-0">
+                <button
+                  onClick={() => setEditTab('info')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${editTab === 'info' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+                >
+                  Thông tin sản phẩm
+                </button>
+                <button
+                  onClick={() => setEditTab('bom')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${editTab === 'bom' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+                >
+                  Công thức đóng gói
+                </button>
+              </div>
+              {editTab === 'info' && (
+                <ProductForm
+                  defaultValues={editProduct}
+                  onSubmit={handleEdit}
+                  onCancel={() => { setEditProduct(null); setEditTab('info') }}
+                  loading={isPending}
+                />
+              )}
+              {editTab === 'bom' && (
+                <div className="overflow-y-auto flex-1 py-1">
+                  <ProductBomSection productId={editProduct.id} materials={materials} />
+                </div>
+              )}
+            </>
           )}
         </DialogContent>
       </Dialog>

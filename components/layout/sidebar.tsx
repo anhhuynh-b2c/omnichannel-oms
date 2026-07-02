@@ -14,7 +14,14 @@ import {
   ChevronRight,
   Store,
   ShoppingBag,
+  Tag,
+  Truck,
   LogOut,
+  BarChart2,
+  Calculator,
+  ScrollText,
+  Users,
+  PackageCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -22,23 +29,39 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useI18n } from '@/lib/i18n/context'
 import { createClient } from '@/lib/supabase/client'
+import { NAV_ITEMS, type Role } from '@/lib/auth/roles'
 
-const NAV_ITEMS = [
-  { href: '/',                label: 'nav.dashboard',      icon: LayoutDashboard },
-  { href: '/products',        label: 'nav.products',       icon: Package },
-  { href: '/inventory',       label: 'nav.inventory',      icon: Warehouse },
-  { href: '/orders',          label: 'nav.orders',         icon: ShoppingCart },
-  { href: '/sale',             label: 'nav.sale',           icon: ShoppingBag },
-  { href: '/purchase-orders', label: 'nav.purchaseOrders', icon: ClipboardList },
-  { href: '/integrations',    label: 'nav.integrations',   icon: Plug },
-  { href: '/settings',        label: 'nav.settings',       icon: Settings },
-]
+const ICON_MAP: Record<string, React.ElementType> = {
+  '/':                LayoutDashboard,
+  '/products':        Package,
+  '/categories':      Tag,
+  '/inventory':       Warehouse,
+  '/fulfillment':     PackageCheck,
+  '/customers':       Users,
+  '/orders':          ShoppingCart,
+  '/sale':            ShoppingBag,
+  '/purchase-orders': ClipboardList,
+  '/suppliers':       Truck,
+  '/reports':         BarChart2,
+  '/accountant':      Calculator,
+  '/integrations':    Plug,
+  '/audit-logs':      ScrollText,
+  '/settings':        Settings,
+}
 
-export function Sidebar() {
+interface SidebarProps {
+  role: Role | null
+}
+
+export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
   const { t } = useI18n()
+
+  const visibleItems = NAV_ITEMS.filter(item =>
+    role && (item.roles as readonly string[]).includes(role)
+  )
 
   async function handleLogout() {
     const supabase = createClient()
@@ -72,8 +95,8 @@ export function Sidebar() {
         {/* Nav */}
         <ScrollArea className="flex-1 py-4">
           <nav className="px-2 space-y-1">
-            {NAV_ITEMS.map(item => {
-              const Icon = item.icon
+            {visibleItems.map(item => {
+              const Icon = ICON_MAP[item.href] ?? Package
               const isActive =
                 item.href === '/'
                   ? pathname === '/'
@@ -139,7 +162,7 @@ export function Sidebar() {
         {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(v => !v)}
-          className="absolute -right-3 top-20 w-6 h-6 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center border border-slate-600 text-slate-300 hover:text-white transition-colors z-10"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center border border-slate-600 text-slate-300 hover:text-white transition-colors z-10"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? (

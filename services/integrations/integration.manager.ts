@@ -9,10 +9,13 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { OrderService } from '@/lib/services/order.service'
 import { inventoryQueue } from '@/lib/queue/inventory-queue'
+import { ProductDedupService, type IncomingProduct } from '@/lib/services/product-dedup.service'
+import { generateOrderNumber } from '@/lib/utils/order-number'
 import type { OrderStatus } from '@/types'
 
 interface ImportedOrder {
   channel_id: string
+  /** External marketplace order ID (e.g. Shopee order_sn) — stored for traceability */
   order_number: string
   total_amount: number
   status: string
@@ -63,13 +66,23 @@ export class IntegrationManager {
     let skipped = 0
     const errors: string[] = []
 
+    // Cache channel names to avoid repeated lookups
+    const channelNameCache = new Map<string, string>()
+    const getChannelName = async (channelId: string) => {
+      if (!channelNameCache.has(channelId)) {
+        const { data } = await supabase.from('channels').select('name').eq('id', channelId).single()
+        channelNameCache.set(channelId, data?.name ?? 'ORD')
+      }
+      return channelNameCache.get(channelId)!
+    }
+
     for (const order of orders) {
       try {
-        // Check for existing order
+        // Check for existing order by external ID
         const { data: existing } = await supabase
           .from('orders')
           .select('id')
-          .eq('order_number', order.order_number)
+          .eq('external_order_id', order.order_number)
           .single()
 
         if (existing) { skipped++; continue }
@@ -98,13 +111,17 @@ export class IntegrationManager {
           customerId = newCustomer!.id
         }
 
-        // Create order
+        // Create order with internal number + external ID for traceability
+        const channelName = await getChannelName(order.channel_id)
+        const internalOrderNumber = await generateOrderNumber(supabase, channelName)
+
         const { data: newOrder } = await supabase
           .from('orders')
           .insert({
             channel_id: order.channel_id,
             customer_id: customerId,
-            order_number: order.order_number,
+            order_number: internalOrderNumber,
+            external_order_id: order.order_number,
             total_amount: order.total_amount,
             status: 'PENDING',
             order_date: order.order_date,
@@ -177,5 +194,103 @@ export class IntegrationManager {
     })
 
     console.log(`[IntegrationManager] Queued ${updates.length} stock updates for ${channelName}`)
+  }
+
+  /**
+   * Sync a product catalog from a channel with full dedup logic.
+   *
+   * For each incoming product:
+   *   - MATCH_EXACT  → link channel_sku to existing product (no duplicate created)
+   *   - MATCH_FUZZY  → added to `pendingReview` list, returned to caller for human decision
+   *   - NO_MATCH     → create brand-new product + inventory row
+   *
+   * Returns a summary the caller can log or surface in the UI.
+   */
+  static async syncProducts(
+    channelId: string,
+    incomingProducts: Array<
+      IncomingProduct & {
+        price: number
+        cost: number
+        category: string
+        initial_stock?: number
+      }
+    >
+  ): Promise<{
+    linked: number
+    created: number
+    pendingReview: Array<{
+      incoming: IncomingProduct
+      candidates: import('@/lib/services/product-dedup.service').DedupCandidate[]
+    }>
+    errors: string[]
+  }> {
+    const supabase = await createServiceClient()
+    let linked = 0
+    let created = 0
+    const pendingReview: Array<{
+      incoming: IncomingProduct
+      candidates: import('@/lib/services/product-dedup.service').DedupCandidate[]
+    }> = []
+    const errors: string[] = []
+
+    for (const item of incomingProducts) {
+      try {
+        const dedupResult = await ProductDedupService.check(item)
+
+        if (dedupResult.outcome === 'MATCH_EXACT' && dedupResult.matched) {
+          // Already exists — just ensure the SKU mapping is recorded
+          await ProductDedupService.resolveExact(
+            item,
+            dedupResult.matched.product.id,
+            dedupResult.matched.strategy
+          )
+          linked++
+          continue
+        }
+
+        if (dedupResult.outcome === 'MATCH_FUZZY') {
+          // Persist to DB so the review page can surface it
+          await ProductDedupService.logFuzzyMatch(item)
+          pendingReview.push({ incoming: item, candidates: dedupResult.candidates ?? [] })
+          continue
+        }
+
+        // NO_MATCH — safe to create a new product
+        const masterSku = item.platform_sku ?? item.channel_sku
+        const { data: newProduct, error } = await supabase
+          .from('products')
+          .insert({
+            name: item.name,
+            master_sku: masterSku,
+            category: item.category,
+            price: item.price,
+            cost: item.cost,
+            status: 'ACTIVE',
+          })
+          .select('id')
+          .single()
+
+        if (error || !newProduct) {
+          errors.push(`Failed to create product ${item.channel_sku}: ${error?.message}`)
+          continue
+        }
+
+        // Create inventory row
+        await supabase.from('inventory').insert({
+          product_id: newProduct.id,
+          stock_quantity: item.initial_stock ?? 0,
+          reorder_point: 10,
+          safety_stock: 20,
+        })
+
+        await ProductDedupService.logNewProduct(item, newProduct.id)
+        created++
+      } catch (err) {
+        errors.push(`${item.channel_sku}: ${(err as Error).message}`)
+      }
+    }
+
+    return { linked, created, pendingReview, errors }
   }
 }

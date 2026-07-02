@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
-import type { OrderStatus } from '@/types'
+import { createServiceClient } from '@/lib/supabase/server'
+import { generateOrderNumber } from '@/lib/utils/order-number'
 
 export async function getOrders(params?: {
   search?: string
@@ -8,7 +8,7 @@ export async function getOrders(params?: {
   page?: number
   limit?: number
 }) {
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
   const limit = params?.limit ?? 50
   const page = params?.page ?? 1
   const from = (page - 1) * limit
@@ -17,10 +17,10 @@ export async function getOrders(params?: {
   let query = supabase
     .from('orders')
     .select(`
-      id, order_number, status, total_amount, created_at, notes,
-      channels(name),
+      id, order_number, status, total_amount, order_date, created_at,
+      channels(id, name, icon),
       customers(name, phone),
-      order_items(quantity, unit_price, products(name, master_sku))
+      order_items(quantity, products(name, master_sku))
     `, { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, to)
@@ -48,8 +48,21 @@ export async function getOrders(params?: {
   return { data: data ?? [], total: count ?? 0 }
 }
 
+export async function getOrderStatusCounts() {
+  const supabase = await createServiceClient()
+  const { data, error } = await supabase
+    .from('orders')
+    .select('status')
+  if (error) throw error
+  const counts: Record<string, number> = {}
+  for (const row of data ?? []) {
+    counts[row.status] = (counts[row.status] ?? 0) + 1
+  }
+  return counts
+}
+
 export async function getChannels() {
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
   const { data, error } = await supabase.from('channels').select('id, name').order('name')
   if (error) throw error
   return data ?? []
@@ -65,12 +78,13 @@ export async function createManualOrder(params: {
   discount: number
   notes: string
 }) {
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const subtotal = params.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0)
   const total = Math.max(0, subtotal - params.discount)
 
-  const orderNumber = `MAN-${Date.now()}`
+  const { data: ch } = await supabase.from('channels').select('name').eq('id', params.channelId).single()
+  const orderNumber = await generateOrderNumber(supabase, ch?.name ?? 'Manual')
 
   const { data: order, error: orderErr } = await supabase
     .from('orders')

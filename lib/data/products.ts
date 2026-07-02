@@ -17,7 +17,8 @@ export async function getProducts(params?: {
     .from('products')
     .select(`
       id, name, master_sku, category, description,
-      price, cost_price, image_url, status, created_at,
+      price, cost, image_url, status, created_at,
+      material, weight_g, length_cm, width_cm, height_cm, unit, barcode, default_safety_stock,
       inventory(stock_quantity, reorder_point, safety_stock, inventory_status)
     `, { count: 'exact' })
     .order('created_at', { ascending: false })

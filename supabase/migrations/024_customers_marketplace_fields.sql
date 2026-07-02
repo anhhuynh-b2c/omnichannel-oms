@@ -1,0 +1,4 @@
+ALTER TABLE customers
+  ADD COLUMN IF NOT EXISTS shopee_username  TEXT UNIQUE,
+  ADD COLUMN IF NOT EXISTS tiktok_username  TEXT UNIQUE,
+  ADD COLUMN IF NOT EXISTS lazada_username  TEXT UNIQUE;

@@ -1,29 +1,59 @@
 'use client'
 
-import { Bell, Moon, Sun, Search } from 'lucide-react'
+import { Moon, Sun, Search } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { LocaleSwitcher } from './locale-switcher'
+import { NotificationPanel } from './notification-panel'
 import { useI18n } from '@/lib/i18n/context'
+import { getAccountProfile } from '@/lib/actions/account.actions'
 
 interface TopbarProps {
   titleKey?: string
   title?: string
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Quản trị viên',
+  WAREHOUSE_STAFF: 'Nhân viên kho',
+  SALES_STAFF: 'Nhân viên bán hàng',
+}
+
 export function Topbar({ titleKey, title }: TopbarProps) {
   const { setTheme, theme } = useTheme()
   const { t } = useI18n()
+  const router = useRouter()
+  const [userName, setUserName] = useState<string>('')
+  const [userRole, setUserRole] = useState<string>('')
+
+  useEffect(() => {
+    getAccountProfile().then(profile => {
+      setUserName(profile.name)
+      setUserRole(ROLE_LABELS[profile.role_name] ?? profile.role_name)
+    }).catch(() => {})
+  }, [])
+
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   const displayTitle = titleKey ? t(titleKey) : (title ?? '')
+  const initials = userName
+    ? userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : '?'
 
   return (
     <header className="h-16 border-b bg-background flex items-center justify-between px-6 shrink-0">
@@ -57,25 +87,32 @@ export function Topbar({ titleKey, title }: TopbarProps) {
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="h-8 w-8 relative">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full" />
-        </Button>
+        <NotificationPanel />
 
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 gap-2 px-2">
-              <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-xs bg-blue-600 text-white">A</AvatarFallback>
+            <Button variant="ghost" className="h-auto gap-2 px-2 py-1">
+              <Avatar className="h-7 w-7">
+                <AvatarFallback className="text-xs bg-blue-600 text-white">{initials}</AvatarFallback>
               </Avatar>
-              <span className="text-sm font-medium hidden md:block">Admin</span>
+              <div className="hidden md:flex flex-col items-start leading-tight">
+                <span className="text-sm font-medium">{userName || '...'}</span>
+                {userRole && <span className="text-[11px] text-muted-foreground">{userRole}</span>}
+              </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem>{t('settings.company')}</DropdownMenuItem>
-            <DropdownMenuItem>{t('nav.settings')}</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">Sign out</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings?tab=company')}>
+              {t('settings.company')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
+              {t('nav.settings')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>
+              Sign out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

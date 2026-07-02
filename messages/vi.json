@@ -41,13 +41,21 @@
   "nav": {
     "dashboard": "Tổng quan",
     "products": "Sản phẩm",
+    "syncReview": "Duyệt trùng lặp",
     "inventory": "Kho hàng",
     "orders": "Đơn hàng",
     "manual": "Nhập thủ công",
     "purchaseOrders": "Đơn nhập hàng",
+    "suppliers": "Nhà cung cấp",
+    "reports": "Báo cáo",
     "integrations": "Tích hợp kênh",
     "settings": "Cài đặt",
-    "sale": "Bán hàng"
+    "sale": "Bán hàng",
+    "categories": "Danh mục",
+    "accountant": "Kế toán",
+    "auditLogs": "Nhật ký hoạt động",
+    "customers": "Khách hàng",
+    "fulfillment": "Đóng gói & Fulfillment"
   },
   "dashboard": {
     "title": "Tổng quan",
@@ -291,5 +299,13 @@
     "connected": "Đã kết nối",
     "disconnected": "Chưa kết nối",
     "error": "Lỗi"
+  },
+  "fulfillment": {
+    "title": "Đóng gói & Fulfillment",
+    "materials": "Vật tư đóng gói",
+    "bom": "Công thức đóng gói",
+    "addMaterial": "Thêm vật tư",
+    "adjustStock": "Điều chỉnh tồn kho",
+    "addRule": "Thêm quy tắc"
   }
 }

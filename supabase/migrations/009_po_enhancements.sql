@@ -1,0 +1,3 @@
+ALTER TABLE purchase_orders
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS approved_by TEXT;

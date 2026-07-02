@@ -61,11 +61,11 @@ export const MOVEMENT_TYPE_LABELS: Record<MovementType, string> = {
 }
 
 export const CHANNEL_ICONS: Record<ChannelName, string> = {
-  Shopee: '🛍️',
-  'TikTok Shop': '🎵',
-  Lazada: '🛒',
-  Facebook: '📘',
-  Instagram: '📸',
+  Shopee: '/channels/shopee.svg',
+  'TikTok Shop': '/channels/tiktok.svg',
+  Lazada: '/channels/lazada.svg',
+  Facebook: '/channels/facebook.svg',
+  Instagram: '/channels/instagram.svg',
   Website: '🌐',
   Zalo: '💬',
   Direct: '🤝',
@@ -83,26 +83,55 @@ export const CHANNEL_COLORS: Record<ChannelName, string> = {
 }
 
 export const PRODUCT_CATEGORIES = [
+  'Cutting Board',
+  'Salad Bowl',
+  'Tray',
+  'Kitchen Utensils',
   'Furniture',
+  'Home & Garden',
   'Electronics',
   'Clothing',
   'Food & Beverage',
   'Health & Beauty',
   'Sports & Outdoors',
-  'Home & Garden',
   'Books & Stationery',
   'Toys & Games',
   'Automotive',
   'Other',
 ]
 
+export const PRODUCT_MATERIALS = [
+  'Teak',
+  'Acacia',
+  'Mango Wood',
+  'Bamboo',
+  'Rubberwood',
+  'Pine',
+  'Oak',
+  'Walnut',
+  'Mixed Wood',
+  'Plastic',
+  'Stainless Steel',
+  'Other',
+]
+
+export const PRODUCT_UNITS: { value: string; label: string }[] = [
+  { value: 'piece', label: 'Piece (cái)' },
+  { value: 'set', label: 'Set (bộ)' },
+  { value: 'pair', label: 'Pair (đôi)' },
+  { value: 'pack', label: 'Pack (gói)' },
+]
+
 export const NAV_ITEMS = [
   { href: '/',                label: 'nav.dashboard',      icon: 'LayoutDashboard', roles: ['ADMIN', 'SALES_STAFF', 'WAREHOUSE_STAFF'] },
   { href: '/products',        label: 'nav.products',       icon: 'Package',         roles: ['ADMIN', 'WAREHOUSE_STAFF'] },
+  { href: '/categories',      label: 'nav.categories',     icon: 'Tag',             roles: ['ADMIN'] },
   { href: '/inventory',       label: 'nav.inventory',      icon: 'Warehouse',       roles: ['ADMIN', 'WAREHOUSE_STAFF'] },
+  { href: '/fulfillment',     label: 'nav.fulfillment',    icon: 'PackageCheck',    roles: ['ADMIN', 'WAREHOUSE_STAFF'] },
   { href: '/orders',          label: 'nav.orders',         icon: 'ShoppingCart',    roles: ['ADMIN', 'SALES_STAFF'] },
   { href: '/manual',          label: 'nav.manual',         icon: 'PenLine',         roles: ['ADMIN', 'SALES_STAFF'] },
   { href: '/purchase-orders', label: 'nav.purchaseOrders', icon: 'ClipboardList',   roles: ['ADMIN', 'WAREHOUSE_STAFF'] },
+  { href: '/suppliers',       label: 'nav.suppliers',      icon: 'Truck',           roles: ['ADMIN', 'WAREHOUSE_STAFF'] },
   { href: '/integrations',    label: 'nav.integrations',   icon: 'Plug',            roles: ['ADMIN'] },
   { href: '/settings',        label: 'nav.settings',       icon: 'Settings',        roles: ['ADMIN'] },
 ] as const

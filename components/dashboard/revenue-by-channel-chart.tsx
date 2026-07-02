@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { RevenueByChannel } from '@/types'
@@ -45,7 +46,7 @@ export function RevenueByChannelChart({ data, loading }: RevenueByChannelChartPr
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Revenue by Channel</CardTitle>
+        <div className="flex items-center justify-between"><CardTitle className="text-base">Revenue by Channel</CardTitle><Link href="/integrations" className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">Manage <span>→</span></Link></div>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={240}>

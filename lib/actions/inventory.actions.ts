@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase/server'
+import { createAuditLog } from '@/lib/audit'
+import { assertRole } from '@/lib/auth/server'
 
 export async function getInventory(params?: {
   search?: string
@@ -41,6 +43,7 @@ export async function adjustInventory(
   qtyChange: number,
   note?: string
 ) {
+  await assertRole(['ADMIN', 'WAREHOUSE_STAFF'])
   const supabase = await createServiceClient()
 
   const { data: inv, error: fetchErr } = await supabase
@@ -68,6 +71,27 @@ export async function adjustInventory(
     reference_id: null,
   })
 
+  await createAuditLog({
+    action: 'UPDATE',
+    resourceType: 'inventory',
+    resourceId: productId,
+    oldData: { stock_quantity: inv.stock_quantity },
+    newData: { stock_quantity: newQty, qty_change: qtyChange },
+    metadata: note ? { note } : undefined,
+  })
+
   revalidatePath('/inventory')
   revalidatePath('/')
+}
+
+export async function getInventoryMovements(productId: string) {
+  const supabase = await createServiceClient()
+  const { data, error } = await supabase
+    .from('inventory_movements')
+    .select('*')
+    .eq('product_id', productId)
+    .order('created_at', { ascending: false })
+    .limit(50)
+  if (error) throw new Error(error.message)
+  return data ?? []
 }

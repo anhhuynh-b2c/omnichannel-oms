@@ -1,0 +1,2 @@
+ALTER TABLE purchase_orders
+  ADD COLUMN IF NOT EXISTS shipping_fee NUMERIC(15,2) NOT NULL DEFAULT 0;

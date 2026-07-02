@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils/format'
-import { Package } from 'lucide-react'
+import { Package, Banknote, CreditCard, Building2, Smartphone, ShoppingBag } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface CartItem {
   productId: string
@@ -19,9 +20,11 @@ interface CartItem {
 interface CheckoutPanelProps {
   cart: CartItem[]
   discount: number
+  platformFee: number
   note: string
   channel: string
-  customer: { phone: string; name: string; address: string }
+  customer: { phone: string; name: string; address: string; email?: string; city?: string; district?: string; customer_group?: string }
+  staffName: string
   onCheckoutComplete: () => void
 }
 
@@ -32,16 +35,60 @@ const CARRIERS = [
   { value: 'SELF', label: 'Tự giao' },
 ]
 
-export function CheckoutPanel({ cart, discount, note, channel, customer, onCheckoutComplete }: CheckoutPanelProps) {
+const DIRECT_PAYMENTS = [
+  { value: 'CASH',     label: 'Tiền mặt',    icon: Banknote },
+  { value: 'TRANSFER', label: 'Chuyển khoản', icon: Building2 },
+  { value: 'CARD',     label: 'Thẻ',          icon: CreditCard },
+  { value: 'COD',      label: 'COD',          icon: Smartphone },
+]
+
+const PLATFORM_PAYMENTS: Record<string, { value: string; label: string; icon: typeof Banknote }[]> = {
+  'Shopee': [
+    { value: 'SHOPEE_PAY',   label: 'ShopeePay',     icon: ShoppingBag },
+    { value: 'SHOPEE_COD',   label: 'COD Shopee',    icon: Smartphone },
+    { value: 'TRANSFER',     label: 'Chuyển khoản',  icon: Building2 },
+    { value: 'CARD',         label: 'Thẻ / Ví',      icon: CreditCard },
+  ],
+  'TikTok Shop': [
+    { value: 'TIKTOK_PAY',   label: 'TikTok Pay',    icon: ShoppingBag },
+    { value: 'TIKTOK_COD',   label: 'COD TikTok',    icon: Smartphone },
+    { value: 'TRANSFER',     label: 'Chuyển khoản',  icon: Building2 },
+  ],
+  'Lazada': [
+    { value: 'LAZADA_PAY',   label: 'LazPay',        icon: ShoppingBag },
+    { value: 'LAZADA_COD',   label: 'COD Lazada',    icon: Smartphone },
+    { value: 'CARD',         label: 'Thẻ / Ví',      icon: CreditCard },
+  ],
+  'Facebook': [
+    { value: 'TRANSFER', label: 'Chuyển khoản', icon: Building2 },
+    { value: 'CASH',     label: 'Tiền mặt',     icon: Banknote },
+    { value: 'COD',      label: 'COD',           icon: Smartphone },
+  ],
+  'Zalo': [
+    { value: 'TRANSFER', label: 'Chuyển khoản', icon: Building2 },
+    { value: 'CASH',     label: 'Tiền mặt',     icon: Banknote },
+    { value: 'COD',      label: 'COD',           icon: Smartphone },
+  ],
+}
+
+export function CheckoutPanel({ cart, discount, platformFee, note, channel, customer, staffName, onCheckoutComplete }: CheckoutPanelProps) {
   const [carrier, setCarrier] = useState('GHN')
   const [weight, setWeight] = useState(500)
   const [shippingFee, setShippingFee] = useState(30000)
-  const [codAmount, setCodAmount] = useState(0)
-  const [isCod, setIsCod] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('CASH')
+  const [vatRate, setVatRate] = useState(0)
   const [loading, setLoading] = useState(false)
 
-  const subtotal = cart.reduce((s, item) => s + item.price * item.qty, 0)
-  const grandTotal = Math.max(0, subtotal - discount + shippingFee)
+  const paymentOptions = PLATFORM_PAYMENTS[channel] ?? DIRECT_PAYMENTS
+
+  // Reset to first option when channel changes
+  useEffect(() => {
+    setPaymentMethod(paymentOptions[0]?.value ?? 'CASH')
+  }, [channel]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const subtotal  = cart.reduce((s, item) => s + item.price * item.qty, 0)
+  const vatAmount = Math.round(subtotal * vatRate / 100)
+  const grandTotal = Math.max(0, subtotal - discount - platformFee + vatAmount + shippingFee)
 
   async function handleCheckout() {
     if (cart.length === 0) {
@@ -54,7 +101,7 @@ export function CheckoutPanel({ cart, discount, note, channel, customer, onCheck
       const res = await fetch('/api/sale', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel, customer, items: cart, discount, shippingFee, notes: note }),
+        body: JSON.stringify({ channel, customer, items: cart, discount, platformFee, shippingFee, vatRate, paymentMethod, notes: note, staffName }),
       })
 
       const data = await res.json()
@@ -80,8 +127,42 @@ export function CheckoutPanel({ cart, discount, note, channel, customer, onCheck
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+        {/* Payment method */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Hình thức thanh toán</p>
+            {PLATFORM_PAYMENTS[channel] && (
+              <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
+                {channel}
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {paymentOptions.map(m => {
+              const Icon = m.icon
+              const active = paymentMethod === m.value
+              return (
+                <button
+                  key={m.value}
+                  onClick={() => setPaymentMethod(m.value)}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all',
+                    active
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                  )}
+                >
+                  <Icon className={cn('w-3.5 h-3.5 shrink-0', active ? 'text-blue-500' : 'text-gray-400')} />
+                  <span className="truncate">{m.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         {/* Shipping */}
-        <div className="space-y-3">
+        <div className="space-y-3 border-t border-gray-100 pt-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Vận chuyển</p>
 
           <div>
@@ -109,38 +190,51 @@ export function CheckoutPanel({ cart, discount, note, channel, customer, onCheck
                 onChange={e => setShippingFee(parseInt(e.target.value) || 0)} />
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-700 cursor-pointer select-none" htmlFor="cod-toggle">
-              Thu hộ COD
-            </label>
-            <button
-              id="cod-toggle"
-              onClick={() => setIsCod(v => !v)}
-              className={`relative w-10 h-5 rounded-full transition-colors ${isCod ? 'bg-blue-500' : 'bg-gray-300'}`}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isCod ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
+        {/* VAT */}
+        <div className="space-y-2 border-t border-gray-100 pt-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Thuế VAT</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[0, 5, 8, 10].map(r => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setVatRate(r)}
+                className={cn(
+                  'h-8 rounded-md text-xs font-medium border transition-colors',
+                  vatRate === r
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                )}
+              >
+                {r === 0 ? 'Không VAT' : `${r}%`}
+              </button>
+            ))}
           </div>
-
-          {isCod && (
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Số tiền COD</label>
-              <Input type="number" className="h-8 text-sm" value={codAmount}
-                onChange={e => setCodAmount(parseInt(e.target.value) || 0)} placeholder="0" />
-            </div>
-          )}
         </div>
 
         {/* Summary */}
-        <div className="space-y-2 border-t border-gray-100 pt-4">
+        <div className="space-y-2 border-t border-gray-100 pt-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tổng kết</p>
           <div className="flex justify-between text-sm text-gray-600">
             <span>Tạm tính</span><span>{formatCurrency(subtotal)}</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>Giảm giá</span><span className="text-red-500">-{formatCurrency(discount)}</span>
-          </div>
+          {discount > 0 && (
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Giảm giá</span><span className="text-red-500">-{formatCurrency(discount)}</span>
+            </div>
+          )}
+          {platformFee > 0 && (
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Phí sàn</span><span className="text-red-500">-{formatCurrency(platformFee)}</span>
+            </div>
+          )}
+          {vatRate > 0 && (
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>VAT ({vatRate}%)</span><span className="text-orange-500">+{formatCurrency(vatAmount)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm text-gray-600">
             <span>Phí vận chuyển</span><span>{formatCurrency(shippingFee)}</span>
           </div>

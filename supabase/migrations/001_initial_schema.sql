@@ -88,11 +88,11 @@ CREATE TABLE channels (
 );
 
 INSERT INTO channels (name, icon, status) VALUES
-  ('Shopee',      '🛍️', 'DISCONNECTED'),
-  ('TikTok Shop', '🎵', 'DISCONNECTED'),
-  ('Lazada',      '🛒', 'DISCONNECTED'),
-  ('Facebook',    '📘', 'DISCONNECTED'),
-  ('Instagram',   '📸', 'DISCONNECTED'),
+  ('Shopee',      '/channels/shopee.svg', 'DISCONNECTED'),
+  ('TikTok Shop', '/channels/tiktok.svg', 'DISCONNECTED'),
+  ('Lazada',      '/channels/lazada.svg', 'DISCONNECTED'),
+  ('Facebook',    '/channels/facebook.svg', 'DISCONNECTED'),
+  ('Instagram',   '/channels/instagram.svg', 'DISCONNECTED'),
   ('Website',     '🌐', 'DISCONNECTED');
 
 -- ─── Channel SKU Mapping ──────────────────────────────────────────────────────

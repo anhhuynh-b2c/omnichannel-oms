@@ -41,12 +41,11 @@ export type ChannelName =
   | 'Instagram'
   | 'Website'
   | 'Zalo'
-  | 'Direct'
 
 // Channels that push status via webhook — staff cannot manually change status
 export const MARKETPLACE_CHANNELS: ChannelName[] = ['Shopee', 'TikTok Shop', 'Lazada']
 // Channels where staff manually control order status
-export const MANUAL_CHANNELS: ChannelName[] = ['Facebook', 'Instagram', 'Website', 'Zalo', 'Direct']
+export const MANUAL_CHANNELS: ChannelName[] = ['Facebook', 'Instagram', 'Website', 'Zalo']
 
 // ─── Database Models ────────────────────────────────────────────────────────
 
@@ -64,6 +63,8 @@ export interface User {
   role?: Role
 }
 
+export type ProductUnit = 'piece' | 'set' | 'pair' | 'pack'
+
 export interface Product {
   id: string
   name: string
@@ -74,6 +75,14 @@ export interface Product {
   cost: number
   image_url: string | null
   status: ProductStatus
+  material: string | null
+  weight_g: number | null
+  length_cm: number | null
+  width_cm: number | null
+  height_cm: number | null
+  unit: ProductUnit
+  barcode: string | null
+  default_safety_stock: number
   created_at: string
   updated_at: string
 }
@@ -105,12 +114,37 @@ export interface ChannelSkuMapping {
   channel?: Channel
 }
 
+export type CustomerGroup = 'VIP' | 'LOYAL' | 'REGULAR'
+
 export interface Customer {
   id: string
   name: string
   phone: string | null
   email: string | null
   address: string | null
+  customer_group: CustomerGroup
+  source_channel: string | null
+  city: string | null
+  district: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  // aggregated from orders (joined)
+  total_orders?: number
+  total_spent?: number
+  last_order_date?: string | null
+}
+
+export interface CustomerFormData {
+  name: string
+  phone?: string
+  email?: string
+  address?: string
+  customer_group: CustomerGroup
+  source_channel?: string
+  city?: string
+  district?: string
+  notes?: string
 }
 
 export interface Order {
@@ -118,7 +152,16 @@ export interface Order {
   channel_id: string
   customer_id: string
   order_number: string
+  external_order_id?: string | null
   total_amount: number
+  vat_rate: number
+  discount_amount?: number
+  shipping_fee?: number
+  payment_method?: string
+  notes?: string
+  tracking_number?: string | null
+  shipped_at?: string | null
+  created_by_name?: string | null
   status: OrderStatus
   order_date: string
   created_at: string
@@ -148,12 +191,40 @@ export interface Supplier {
 
 export interface PurchaseOrder {
   id: string
+  po_number?: string
   supplier_id: string
   expected_date: string
   status: PurchaseOrderStatus
+  notes?: string
+  approved_by?: string
+  requisitioner?: string
+  shipped_via?: string
+  fob_point?: string
+  payment_terms?: string
+  ship_to_name?: string
+  ship_to_address?: string
+  vat_rate?: number
+  shipping_fee?: number
+  created_by_name?: string | null
   created_at: string
   supplier?: Supplier
   items?: PurchaseOrderItem[]
+}
+
+export interface CompanySettings {
+  id: string
+  company_name: string
+  slogan?: string | null
+  tax_id?: string | null
+  email?: string | null
+  phone?: string | null
+  address?: string | null
+  city?: string | null
+  website?: string | null
+  logo_url?: string | null
+  currency: string
+  timezone: string
+  updated_at: string
 }
 
 export interface PurchaseOrderItem {
@@ -260,6 +331,16 @@ export interface ProductFormData {
   cost: number
   image_url?: string
   status: ProductStatus
+  material?: string
+  weight_g?: number | null
+  length_cm?: number | null
+  width_cm?: number | null
+  height_cm?: number | null
+  unit?: ProductUnit
+  barcode?: string
+  default_safety_stock?: number
+  initial_stock?: number
+  stock_quantity?: number
 }
 
 export interface InventoryAdjustmentFormData {

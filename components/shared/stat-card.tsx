@@ -1,4 +1,5 @@
 import { type LucideIcon } from 'lucide-react'
+import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -13,6 +14,7 @@ interface StatCardProps {
   iconColor?: string
   iconBg?: string
   loading?: boolean
+  href?: string
 }
 
 export function StatCard({
@@ -24,6 +26,7 @@ export function StatCard({
   iconColor = 'text-blue-600',
   iconBg = 'bg-blue-50 dark:bg-blue-950',
   loading,
+  href,
 }: StatCardProps) {
   if (loading) {
     return (
@@ -44,8 +47,8 @@ export function StatCard({
 
   const isPositive = change !== undefined && change >= 0
 
-  return (
-    <Card className="hover:shadow-md transition-shadow">
+  const card = (
+    <Card className={cn('hover:shadow-md transition-shadow h-full', href && 'cursor-pointer hover:border-primary/40')}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -72,4 +75,9 @@ export function StatCard({
       </CardContent>
     </Card>
   )
+
+  if (href) {
+    return <Link href={href} className="block">{card}</Link>
+  }
+  return card
 }

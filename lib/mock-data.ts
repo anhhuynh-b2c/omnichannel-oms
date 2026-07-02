@@ -24,12 +24,12 @@ const CHANNEL_IDS = {
 }
 
 export const MOCK_CHANNELS: Channel[] = [
-  { id: CHANNEL_IDS.shopee,    name: 'Shopee',      icon: '🛍️', status: 'CONNECTED' },
-  { id: CHANNEL_IDS.tiktok,   name: 'TikTok Shop', icon: '🎵', status: 'DISCONNECTED' },
-  { id: CHANNEL_IDS.lazada,   name: 'Lazada',      icon: '🛒', status: 'DISCONNECTED' },
-  { id: CHANNEL_IDS.facebook, name: 'Facebook',    icon: '📘', status: 'DISCONNECTED' },
-  { id: CHANNEL_IDS.instagram,name: 'Instagram',   icon: '📸', status: 'DISCONNECTED' },
-  { id: CHANNEL_IDS.website,  name: 'Website',     icon: '🌐', status: 'CONNECTED' },
+  { id: CHANNEL_IDS.shopee,    name: 'Shopee',      icon: '/channels/shopee.svg',    status: 'CONNECTED' },
+  { id: CHANNEL_IDS.tiktok,   name: 'TikTok Shop', icon: '/channels/tiktok.svg',    status: 'DISCONNECTED' },
+  { id: CHANNEL_IDS.lazada,   name: 'Lazada',      icon: '/channels/lazada.svg',    status: 'DISCONNECTED' },
+  { id: CHANNEL_IDS.facebook, name: 'Facebook',    icon: '/channels/facebook.svg',  status: 'DISCONNECTED' },
+  { id: CHANNEL_IDS.instagram,name: 'Instagram',   icon: '/channels/instagram.svg', status: 'DISCONNECTED' },
+  { id: CHANNEL_IDS.website,  name: 'Website',     icon: '🌐',                      status: 'CONNECTED' },
 ]
 
 // ─── Products ─────────────────────────────────────────────────────────────────
@@ -113,6 +113,14 @@ const MOCK_PRODUCTS_LIST: MockProduct[] = RAW_PRODUCTS.map((p, i) => ({
   cost: p.cost,
   image_url: null,
   status: (i % 10 === 9 ? 'INACTIVE' : 'ACTIVE') as MockProductStatus,
+  material: null,
+  weight_g: null,
+  length_cm: null,
+  width_cm: null,
+  height_cm: null,
+  unit: 'piece' as const,
+  barcode: null,
+  default_safety_stock: 5,
   created_at: new Date(Date.now() - i * 86400000).toISOString(),
   updated_at: new Date(Date.now() - i * 43200000).toISOString(),
   inventory: {
@@ -165,6 +173,13 @@ const MOCK_CUSTOMERS: Customer[] = CUSTOMER_NAMES.map((name, i) => ({
   phone: `09${(10000000 + i * 1234567).toString().slice(0, 8)}`,
   email: `${name.toLowerCase().replace(' ', '.')}@email.com`,
   address: `${i + 1} Duong so ${i + 5}, Quan ${(i % 12) + 1}, TP.HCM`,
+  customer_group: 'REGULAR' as const,
+  source_channel: null,
+  city: 'TP. Hồ Chí Minh',
+  district: `Quận ${(i % 12) + 1}`,
+  notes: null,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
 }))
 
 // ─── Mock Orders ──────────────────────────────────────────────────────────────
